@@ -73,10 +73,50 @@ router.delete('/users/:id',async(req,res)=>{
 router.post('/login', async(req,res)=>{
     try{
         const user = await User.findByCredentials(req.body.email,req.body.password)
-        res.status(200).send({user})
+        const token = await user.generateToken()
+        res.status(200).send({user , token})
     } catch(e){
         res.status(400).send(e.message)
     }
 })
+//////////////
+
+router.post ('/users' , async (req , res) => {
+    try {
+        const user = new User (req.body)
+        const token = await user.generateToken()
+        await user.save()
+         res.status(200).send({user , token})
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+ 
+
+// Logout
+router.post('/logout', async (req, res) => {
+    try {
+      const token = req.body.token;
+  
+      if (!token) {
+        return res.status(400).send('Please type the token');
+      }
+  
+      // fetch data of the currently registered user
+      const user = await User.findOne({ tokens: token });
+      if (!user) {
+        return res.status(401).send('You are not authorized to log out');
+      }
+  
+      // remove token
+      user.tokens = user.tokens.filter((t) => t !== token);
+      await user.save();
+  
+      res.status(200).send('Successfully logged out');
+    } catch (e) {
+      res.status(500).send('Error occurred on log out');
+    }
+  });
+
 
 module.exports = router 
